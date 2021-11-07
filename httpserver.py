@@ -23,12 +23,7 @@ def handle(sock, addr):
         else:
             protocol, headers = _http.split('/')
             path = unquote(path)
-            #if os.path.exists(os.getcwd() + path):
-                #print(f'[{str(datetime.now()).split(".")[0]}] {addr[0]} {method} {path} 200 OK')
-
-            #elif not os.path.exists(path.split('/', 1)[1]):
-                #print(f'[{str(datetime.now()).split(".")[0]}] {addr[0]} {method} {path} 404 File not found')
-
+           
             if path == '/':
                 sock.send(('HTTP/1.1 200 OK' + CRLF).encode())
                 sock.send((f'Content-Type: {ctype["html"]}' + CRLF * 2).encode())
@@ -86,7 +81,6 @@ def handle(sock, addr):
                             cache[path] = data
                             cache_num.append(path)
                         else:
-                            #print('del')
                             del cache[cache_num[0]]
                             cache[path] = data
                             cache_num.pop(0)
@@ -100,9 +94,7 @@ def handle(sock, addr):
                             ext = path.split('/', 1)[1].split('.')[-1]
                             if path in cache:
                                 sock.send(cache[path])
-                                #print('ok')
                             else:
-                                #print('pathno')
                                 webfile = open(path.split('/', 1)[1], 'rb')
                                 if ext in ctype:
                                     sock.send((f'Content-Type: {ctype[ext]}' + CRLF * 2).encode())
@@ -138,8 +130,6 @@ def handle(sock, addr):
                         else:
                             sock.send((f'Content-Type: {ctype["html"]}' + CRLF * 2).encode())
                             sock.send(f'<meta charset="utf-8">{CRLF}'.encode())
-                            #data = (f'Content-Type: {ctype["html"]}' + CRLF * 2).encode()
-                            #data += f'<meta charset="utf-8">{CRLF}'.encode()
                             if path in cache:
                                 sock.send(cache[path])
                             else:
@@ -202,15 +192,13 @@ def handle(sock, addr):
     except ConnectionAbortedError:
         pass
     
-    #except:
-        #sock.send(('HTTP/1.1 500 Internal Server Error' + CRLF).encode())
-        #sock.send((f'Content-Type: {ctype["html"]}' + CRLF * 2).encode())
-        #sock.send(b'<h1>500 Internal Server Error</h>')
-        #sock.close()
+    except:
+        sock.send(('HTTP/1.1 500 Internal Server Error' + CRLF).encode())
+        sock.send((f'Content-Type: {ctype["html"]}' + CRLF * 2).encode())
+        sock.send(b'<h1>500 Internal Server Error</h>')
+        sock.close()
 
     finally:
-        #print(cache_num)
-        #print('len: ', len(cache))
         sock.close()
 
 
