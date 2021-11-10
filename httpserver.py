@@ -62,10 +62,8 @@ def handle(sock, addr):
                             cache_num.append(path)
 
                 else:
-                    #print(cache)
                     if path in cache:
                         sock.send(cache[path].encode())
-                        #print('ok1')
                     else:
                         data = f'<h1>Directory listing for {path}</h1>{CRLF}<hr>{CRLF}<ul>{CRLF}'
                         for i in os.listdir(os.getcwd() + path):
@@ -103,8 +101,6 @@ def handle(sock, addr):
                                     sock.send(readfile)
                                     webfile.close()
                                     if len(cache) < MAX_LEN:
-                                        #print('caching')
-                                        #print(path)
                                         cache[path] = _type + readfile
                                         cache_num.append(path)
                                     else:
@@ -196,7 +192,6 @@ def handle(sock, addr):
         sock.send(('HTTP/1.1 500 Internal Server Error' + CRLF).encode())
         sock.send((f'Content-Type: {ctype["html"]}' + CRLF * 2).encode())
         sock.send(b'<h1>500 Internal Server Error</h>')
-        sock.close()
 
     finally:
         sock.close()
