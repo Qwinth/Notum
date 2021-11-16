@@ -2,17 +2,30 @@ import socket
 import ssl
 import os
 import threading
-from datetime import datetime
+import argparse
 from urllib.parse import unquote
 CRLF = '\r\n'
 ctype = {'html': 'text/html', 'htm': 'text/html', 'txt': 'text/html', 'ico': 'image/x-icon', 'css': 'text/css', 'js': 'application/javascript', 'jpg': 'image/jpeg', 'png': 'image/png', 'gif': 'image/gif', 'mp3': 'audio/mp3', 'ogg': 'audio/ogg', 'wav': 'audio/wav', 'opus': 'audio/opus', 'mp4': 'video/mp4', 'webm': 'video/webm', 'other':'application/octet-stream'}
 cache = {}
 cache_num = []
-MAX_LEN = 5
+MAX_LEN = 3
+port = int()
 SSL = False
-def handle(sock, addr):
+
+def setcache(data, path):
     global cache
     global cache_num
+    if len(cache) < MAX_LEN:
+        cache[path] = data
+        cache_num.append(path)
+    else:
+        del cache[cache_num[0]]
+        cache[path] = data
+        cache_num.pop(0)
+        cache_num.append(path)
+
+
+def handle(sock, addr):
     try:
         request = sock.recv(2048)
         temp = request.decode().split('\r\n')
@@ -23,7 +36,7 @@ def handle(sock, addr):
         else:
             protocol, headers = _http.split('/')
             path = unquote(path)
-           
+
             if path == '/':
                 sock.send(('HTTP/1.1 200 OK' + CRLF).encode())
                 sock.send((f'Content-Type: {ctype["html"]}' + CRLF * 2).encode())
@@ -36,13 +49,8 @@ def handle(sock, addr):
                         readfile = webfile.read()
                         sock.send(readfile)
                         webfile.close()
-                        if not len(cache) > MAX_LEN:
-                            cache[path] = readfile
-                            cache_num.append(path)
-                        else:
-                            del cache[cache_num[0]]
-                            cache[path] = readfile
-                            cache_num.pop(0)
+                        threading.Thread(target=setcache, args=(readfile, path)).start()
+                        
     
                 elif 'index.htm' in os.listdir():
                     if path in cache:
@@ -52,18 +60,14 @@ def handle(sock, addr):
                         readfile = webfile.read()
                         sock.send(readfile)
                         webfile.close()
-                        if not len(cache) > MAX_LEN:
-                            cache[path] = readfile
-                            cache_num.append(path)
-                        else:
-                            del cache[cache_num[0]]
-                            cache[path] = readfile
-                            cache_num.pop(0)
-                            cache_num.append(path)
+                        threading.Thread(target=setcache, args=(readfile, path)).start()
+
 
                 else:
+                    #print(cache)
                     if path in cache:
                         sock.send(cache[path].encode())
+                        #print('ok1')
                     else:
                         data = f'<h1>Directory listing for {path}</h1>{CRLF}<hr>{CRLF}<ul>{CRLF}'
                         for i in os.listdir(os.getcwd() + path):
@@ -74,15 +78,7 @@ def handle(sock, addr):
                         data += f'</ul>{CRLF}'
                         data += f'<hr>{CRLF}'
                         sock.send(data.encode())
-                        if len(cache) < MAX_LEN:
-                            
-                            cache[path] = data
-                            cache_num.append(path)
-                        else:
-                            del cache[cache_num[0]]
-                            cache[path] = data
-                            cache_num.pop(0)
-                            cache_num.append(path)
+                        threading.Thread(target=setcache, args=(data, path)).start()
                     
             
             else:
@@ -92,7 +88,9 @@ def handle(sock, addr):
                             ext = path.split('/', 1)[1].split('.')[-1]
                             if path in cache:
                                 sock.send(cache[path])
+                                #print('ok')
                             else:
+                                #print('pathno')
                                 webfile = open(path.split('/', 1)[1], 'rb')
                                 if ext in ctype:
                                     sock.send((f'Content-Type: {ctype[ext]}' + CRLF * 2).encode())
@@ -100,14 +98,7 @@ def handle(sock, addr):
                                     readfile = webfile.read()
                                     sock.send(readfile)
                                     webfile.close()
-                                    if len(cache) < MAX_LEN:
-                                        cache[path] = _type + readfile
-                                        cache_num.append(path)
-                                    else:
-                                        del cache[cache_num[0]]
-                                        cache[path] = _type + readfile
-                                        cache_num.pop(0)
-                                        cache_num.append(path)
+                                    threading.Thread(target=setcache, args=((_type + readfile), path)).start()
                         
                                 else:
                                     sock.send((f'Content-Type: {ctype["other"]}' + CRLF * 2).encode())
@@ -115,17 +106,12 @@ def handle(sock, addr):
                                     readfile = webfile.read()
                                     sock.send(readfile)
                                     webfile.close()
-                                    if len(cache) < MAX_LEN:
-                                        cache[path] = _type + readfile
-                                        cache_num.append(path)
-                                    else:
-                                        del cache[cache_num[0]]
-                                        cache[path] = _type + readfile
-                                        cache_num.pop(0)
-                                        cache_num.append(path)
+                                    threading.Thread(target=setcache, args=((_type + readfile), path)).start()
+                        
                         else:
                             sock.send((f'Content-Type: {ctype["html"]}' + CRLF * 2).encode())
                             sock.send(f'<meta charset="utf-8">{CRLF}'.encode())
+
                             if path in cache:
                                 sock.send(cache[path])
                             else:
@@ -135,27 +121,14 @@ def handle(sock, addr):
                                     data = webfile.read()
                                     sock.send(data)
                                     webfile.close()
-                                    if len(cache) < MAX_LEN:
-                                        cache[path] = data
-                                        cache_num.append(path)
-                                    else:
-                                        del cache[cache_num[0]]
-                                        cache[path] = data
-                                        cache_num.pop(0)
-                                        cache_num.append(path)
+                                    threading.Thread(target=setcache, args=(data, path)).start()
     
                                 elif 'index.htm' in os.listdir(os.getcwd() + path):
                                     data = webfile.read()
                                     sock.send(data)
                                     webfile.close()
-                                    if len(cache) < MAX_LEN:
-                                        cache[path] = data
-                                        cache_num.append(path)
-                                    else:
-                                        del cache[cache_num[0]]
-                                        cache[path] = data
-                                        cache_num.pop(0)
-                                        cache_num.append(path)
+                                    threading.Thread(target=setcache, args=(data, path)).start()
+                                
                                 else:
                                     data = f'<h1>Directory listing for {path}</h1>{CRLF}'.encode()
                                     data += f'<hr>{CRLF}'.encode()
@@ -168,14 +141,7 @@ def handle(sock, addr):
                                     data += f'</ul>{CRLF}'.encode()
                                     data += f'<hr>{CRLF}'.encode()
                                     sock.send(data)
-                                    if len(cache) < MAX_LEN:
-                                        cache[path] = data
-                                        cache_num.append(path)
-                                    else:
-                                        del cache[cache_num[0]]
-                                        cache[path] = data
-                                        cache_num.pop(0)
-                                        cache_num.append(path)
+                                    threading.Thread(target=setcache, args=(data, path)).start()
                     
                     else:
                         sock.send(('HTTP/1.1 404 Not Found' + CRLF).encode())
@@ -199,13 +165,22 @@ def handle(sock, addr):
 
 
 if __name__ == '__main__':
-    
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-s', '--SSL', nargs='+')
+    parser.add_argument('-p', '--port')
+    args = parser.parse_args()
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    if not args.SSL == None:
+        SSL = True
+    
     if SSL:
-        s = ssl.wrap_socket (s, certfile='cert.crt', keyfile='private.key', server_side=True)
+        s = ssl.wrap_socket (s, certfile=args.SSL[0], keyfile=args.SSL[1], server_side=True)
         s.bind(('', 443))
     else:
-        s.bind(('', 80))
+        port = 80
+        if not args.port == None:
+            port = int(args.port)
+        s.bind(('', port))
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.listen(0)
 
@@ -215,4 +190,3 @@ if __name__ == '__main__':
             threading.Thread(target=handle, args=(clientsock, clientaddress)).start()
         except:
             pass
-
