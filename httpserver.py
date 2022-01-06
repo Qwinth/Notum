@@ -64,10 +64,8 @@ def handle(sock, addr):
 
 
                 else:
-                    #print(cache)
                     if path in cache:
                         sock.send(cache[path].encode())
-                        #print('ok1')
                     else:
                         data = f'<h1>Directory listing for {path}</h1>{CRLF}<hr>{CRLF}<ul>{CRLF}'
                         for i in os.listdir(os.getcwd() + path):
@@ -88,9 +86,7 @@ def handle(sock, addr):
                             ext = path.split('/', 1)[1].split('.')[-1]
                             if path in cache:
                                 sock.send(cache[path])
-                                #print('ok')
                             else:
-                                #print('pathno')
                                 webfile = open(path.split('/', 1)[1], 'rb')
                                 if ext in ctype:
                                     sock.send((f'Content-Type: {ctype[ext]}' + CRLF * 2).encode())
