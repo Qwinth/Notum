@@ -154,12 +154,12 @@ def handle(sock, addr):
                                         sock.send(('Server: SIWEB/0.5' + CRLF).encode())
                                         sock.send(('Accept-Ranges: bytes' + CRLF).encode())
                                         sock.send((f'Content-Length: {len(readfile)}' + CRLF).encode())
-                                        sock.send((f'Content-Type: {ctype[ext]}' + CRLF * 2  ).encode())
+                                        sock.send((f'Content-Type: {ctype[ext]}; charset=UTF-8' + CRLF * 2  ).encode())
                                         _type = (('HTTP/1.1 200 OK' + CRLF).encode())
                                         _type += (('Server: SIWEB/0.5' + CRLF).encode())
                                         _type += (('Accept-Ranges: bytes' + CRLF).encode())
                                         _type += ((f'Content-Length: {len(readfile)}' + CRLF).encode())
-                                        _type += ((f'Content-Type: {ctype[ext]}' + CRLF * 2).encode())
+                                        _type += ((f'Content-Type: {ctype[ext]}; charset=UTF-8' + CRLF * 2).encode())
                                         sock.send(readfile)
 #---------------------------------------------------------
                             
