@@ -1,6 +1,7 @@
 import socket
 import ssl
 import os
+import sys
 import threading
 import argparse
 from urllib.parse import unquote
@@ -254,7 +255,7 @@ def handle(sock, addr):
         pass
 
     except KeyboardInterrupt:
-        exit()
+        sys.exit(0)
 #---------------------------500---------------------------
     except Exception as ex:
         sock.send(('HTTP/1.1 500 Internal Server Error' + CRLF).encode())
@@ -294,7 +295,7 @@ if __name__ == '__main__':
             clientsock, clientaddress = s.accept()
             threading.Thread(target=handle, args=(clientsock, clientaddress)).start()
         except KeyboardInterrupt:
-            exit()
+            sys.exit(0)
         except:
             pass
 #---------------------------------------------------------
