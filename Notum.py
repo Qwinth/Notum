@@ -164,7 +164,7 @@ def handle(sock):
                                                     httpcode = int(outarg)
                                                 if command == 'content-type':
                                                     if outarg in ctype:
-                                                    content_type = outarg
+                                                        content_type = outarg
                                             data = data.split('::;')[-1]
                                         socksend(sock, httpcode, content_type, data.encode(), method=method)
 #---------------------------------------------------------
