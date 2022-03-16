@@ -50,14 +50,14 @@ def socksend(sock, code, ext, data, fileobj=None, Accept_Ranges = False, Content
         else:
             sock.sendfile(fileobj)
 
-def handle(sock):
+def handler(sock):
     try:
         request = sock.recv(4096)
         temp = request.decode().split('\r\n')
         print(temp)
         client_headers = {}
         try:
-            method, path, _http = temp[0].split(' ')
+            method, path, _ = temp[0].split(' ')
             for i in temp[1:-2]:
                 client_headers[i.split(': ')[0]] = i.split(': ')[1]
             #print(client_headers)
@@ -67,7 +67,6 @@ def handle(sock):
 #---------------------------------------------------------
 
         else:
-            protocol, version = _http.split('/')
             if method == 'GET':
                 if len(unquote(path).split('?', 1)) == 2:
                     path, cgiargs = unquote(path.replace('+', ' ')).split('?', 1)
@@ -173,7 +172,7 @@ def handle(sock):
                                     sock.sendall(cache[path])
 #---------------------------------------------------------
                                 else:
-                                    webfile = open(path.split('/', 1)[1], 'rb')                              
+                                    webfile = open(path.split('/', 1)[1], 'rb')                             
 #---------------------------in-ctype----------------------
                                 
                                     if ext in ctype:
@@ -313,7 +312,7 @@ if __name__ == '__main__':
     while True:
         try:
             clientsock, clientaddress = s.accept()
-            threading.Thread(target=handle, args=(clientsock,)).start()
+            threading.Thread(target=handler, args=(clientsock,)).start()
         except KeyboardInterrupt:
             sys.exit(0)
         except:
