@@ -54,13 +54,11 @@ def handler(sock):
     try:
         request = sock.recv(4096)
         temp = request.decode().split('\r\n')
-        print(temp)
         client_headers = {}
         try:
             method, path, _ = temp[0].split(' ')
             for i in temp[1:-2]:
                 client_headers[i.split(': ')[0]] = i.split(': ')[1]
-            #print(client_headers)
         except:
 #---------------------------400---------------------------
             socksend(sock, 400, 'html', b'<h1>400 Bad Request</h>')
@@ -295,7 +293,7 @@ if __name__ == '__main__':
         SSL = True
     
     if SSL:
-        s = ssl.wrap_socket (s, certfile=args.SSL[0], keyfile=args.SSL[1], server_side=True)
+        s = ssl.wrap_socket (s, certfile=args.SSL[0], keyfile=args.SSL[1], server_side=True, ssl_version="TLSv1")
         port = 443
     else:
         port = 80
