@@ -160,12 +160,11 @@ def handle(sock):
                                         if '!ntc' in data:
                                             for i in data.split('::;')[:-1]:
                                                 command, outarg = i.split('!ntc::')[1].split('=')
-                                                match command:
-                                                    case 'httpcode':
-                                                        httpcode = int(outarg)
-                                                    case 'content-type':
-                                                        if outarg in ctype:
-                                                            content_type = outarg
+                                                if command == 'httpcode':
+                                                    httpcode = int(outarg)
+                                                if command == 'content-type':
+                                                    if outarg in ctype:
+                                                    content_type = outarg
                                             
                                             data = data.split('::;')[-1]
                                         socksend(sock, httpcode, content_type, data.encode(), method=method)
