@@ -12,7 +12,7 @@ class CGI:
         else:
             try:
                 data = self.client_headers[inkey]
-            except:
+            except KeyError:
                 data = None
         return data
 
@@ -25,14 +25,14 @@ class CGI:
             try:
                 value = i.split('=')[1]
                 self.fargs[key] = value
-            except:
+            except KeyError:
                 self.fargs[key] = None
         if inkey == None:
             temp = self.fargs
         else:
             try:
                 temp = self.fargs[inkey]
-            except:
+            except KeyError:
                 temp = None
         return temp
 
