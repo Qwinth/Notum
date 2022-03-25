@@ -17,6 +17,12 @@ MAX_LEN = int()
 port = int()
 SSL = False
 
+def length(file):
+    num = 0
+    for i in file:
+        num += len(i)
+    return num
+
 def setcache(data, path):
     global cache
     global cache_num
@@ -33,25 +39,31 @@ def setcache(data, path):
             cache = {}
             cache_num = []
             
-def socksend(sock, code, ext, data, fileobj=None, Accept_Ranges = False, Content_Range = False, Content_Range_Data = (), method='GET'):
-    sock.sendall((f'HTTP/1.1 {code}' + CRLF).encode())
-    sock.sendall(('Server: Notum' + CRLF).encode())
-    if Accept_Ranges:
-        sock.sendall(('Accept-Ranges: bytes' + CRLF).encode())
-    sock.sendall(('Connection: Close' + CRLF).encode())
-    if Content_Range:
-        _range, lendata = Content_Range_Data
-        sock.sendall((f'Content-Range: bytes {_range}-{lendata}/{lendata + 1}' + CRLF).encode())
-    sock.sendall((f'Content-Length: {len(data)}' + CRLF).encode())
-    sock.sendall((f'Content-Type: {ctype[ext]}; charset=UTF-8' + CRLF * 2).encode())
-    if method == 'GET' or method == 'POST':
-        if fileobj == None:
-            sock.sendall(data)
-        else:
-            try:
-                sock.sendfile(fileobj)
-            except BrokenPipeError:
-                pass
+def socksend(sock, code, ext, data=None, datalen=0, fileobj=None, Accept_Ranges = False, Content_Range = False, Content_Range_Data = (), method='GET'):
+    try:
+        if data:
+            datalen = len(data)
+        sock.sendall((f'HTTP/1.1 {code}' + CRLF).encode())
+        sock.sendall(('Server: Notum' + CRLF).encode())
+        if Accept_Ranges:
+            sock.sendall(('Accept-Ranges: bytes' + CRLF).encode())
+        sock.sendall(('Connection: close' + CRLF).encode())
+        if Content_Range:
+            _range, lendata = Content_Range_Data
+            sock.sendall((f'Content-Range: bytes {_range}-{lendata}/{lendata + 1}' + CRLF).encode())
+        sock.sendall((f'Content-Length: {datalen}' + CRLF).encode())
+        sock.sendall((f'Content-Type: {ctype[ext]}; charset=UTF-8' + CRLF * 2).encode())
+        if method == 'GET' or method == 'POST':
+            if fileobj == None:
+                sock.sendall(data)
+            else:
+                if code == 206:
+                    for i in fileobj:
+                        sock.sendall(i)
+                else:
+                    sock.sendfile(fileobj)
+    except BrokenPipeError:
+        pass
 
 def handler(sock):
     try:
@@ -134,12 +146,12 @@ def handler(sock):
                             if 'Range' in client_headers:
                                 _range = int(client_headers['Range'].split('=')[1][:-1])
                                 webfile = open(path.split('/', 1)[1], 'rb')
-                                lenfile = open(path.split('/', 1)[1], 'rb')
-                                lendata = len(lenfile.read())
-                                lenfile.close()
-                                data = webfile.read()[_range:]
+                                with open(path.split('/', 1)[1], 'rb') as lenfile:
+                                    lendata = length(lenfile)
                                 webfile.seek(_range)
-                                socksend(sock, 206, ext, data, Accept_Ranges=True, Content_Range=True, Content_Range_Data=(_range, lendata), method=method)
+                                datalen = length(webfile)
+                                webfile.seek(_range)
+                                socksend(sock, 206, ext, datalen=datalen, fileobj=webfile, Accept_Ranges=True, Content_Range=True, Content_Range_Data=(_range, lendata), method=method)
                                 webfile.close()
 #---------------------------------------------------------
                             else:
@@ -177,29 +189,26 @@ def handler(sock):
                                     webfile = open(path.split('/', 1)[1], 'rb')                             
 #---------------------------in-ctype----------------------
                                     if ext in ctype:
-                                        data = webfile.read()
+                                        datalen = length(webfile)
                                         _type = (('HTTP/1.1 200 OK' + CRLF).encode())
                                         _type += (('Server: Notum' + CRLF).encode())
                                         _type += (('Accept-Ranges: bytes' + CRLF).encode())
-                                        _type += ((f'Content-Length: {len(data)}' + CRLF).encode())
+                                        _type += ((f'Content-Length: {datalen}' + CRLF).encode())
                                         _type += ((f'Content-Type: {ctype[ext]}; charset=UTF-8' + CRLF * 2).encode())
                                         webfile.seek(0)
-                                        socksend(sock, 200, ext, data, fileobj=webfile, Accept_Ranges=True, method=method)
-                                        webfile.close()
+                                        socksend(sock, 200, ext, datalen=datalen, fileobj=webfile, Accept_Ranges=True, method=method)
 #---------------------------------------------------------
                         
                                     else:
 #---------------------------otcet-stream------------------
-                                        data = webfile.read()
+                                        datalen = length(webfile)
                                         _type = (('HTTP/1.1 200 OK' + CRLF).encode())
                                         _type += (('Server: Notum' + CRLF).encode())
-                                        _type += ((f'Content-Length: {len(data)}' + CRLF).encode())
+                                        _type += ((f'Content-Length: {datalen}' + CRLF).encode())
                                         _type += ((f'Content-Type: {ctype["other"]}' + CRLF * 2).encode())
                                         webfile.seek(0)
-                                        socksend(sock, 200, 'other', data, webfile, method=method)
+                                        socksend(sock, 200, 'other', datalen=datalen, fileobj=webfile, method=method)
 #---------------------------------------------------------
-                                    if len(data) < cache_max_len:
-                                        threading.Thread(target=setcache, args=((_type + data), path)).start()
                                     webfile.close()
                         
                         else:
