@@ -38,7 +38,7 @@ def setcache(data, path):
         except:
             cache = {}
             cache_num = []
-            
+
 def socksend(sock, code, ext, data=None, datalen=0, fileobj=None, Accept_Ranges = False, Content_Range = False, Content_Range_Data = (), method='GET'):
     try:
         if data:
@@ -186,7 +186,7 @@ def handler(sock):
                                     sock.sendall(cache[path])
 #---------------------------------------------------------
                                 else:
-                                    webfile = open(path.split('/', 1)[1], 'rb')                             
+                                    webfile = open(path.split('/', 1)[1], 'rb')
 #---------------------------in-ctype----------------------
                                     if ext in ctype:
                                         datalen = length(webfile)
