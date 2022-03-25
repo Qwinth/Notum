@@ -264,8 +264,8 @@ def handler(sock):
     except KeyboardInterrupt:
         sys.exit(0)
 #---------------------------500---------------------------
-    #except Exception as ex:
-        #socksend(sock, 500, 'html', ('<h1>500 Internal Server Error</h><br>' + str(ex)).encode(), method=method)
+    except Exception as ex:
+        socksend(sock, 500, 'html', ('<h1>500 Internal Server Error</h><br>' + str(ex)).encode(), method=method)
 #---------------------------------------------------------
 
     finally:
