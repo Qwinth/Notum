@@ -38,7 +38,7 @@ def socksend(sock, code, ext, data, fileobj=None, Accept_Ranges = False, Content
     sock.sendall(('Server: Notum' + CRLF).encode())
     if Accept_Ranges:
         sock.sendall(('Accept-Ranges: bytes' + CRLF).encode())
-    sock.sendall(('Connection: Keep-Alive' + CRLF).encode())
+    sock.sendall(('Connection: Close' + CRLF).encode())
     if Content_Range:
         _range, lendata = Content_Range_Data
         sock.sendall((f'Content-Range: bytes {_range}-{lendata}/{lendata + 1}' + CRLF).encode())
@@ -48,7 +48,10 @@ def socksend(sock, code, ext, data, fileobj=None, Accept_Ranges = False, Content
         if fileobj == None:
             sock.sendall(data)
         else:
-            sock.sendfile(fileobj)
+            try:
+                sock.sendfile(fileobj)
+            except BrokenPipeError:
+                pass
 
 def handler(sock):
     try:
@@ -135,8 +138,9 @@ def handler(sock):
                                 lendata = len(lenfile.read())
                                 lenfile.close()
                                 data = webfile.read()[_range:]
+                                webfile.seek(_range)
+                                socksend(sock, 206, ext, data, Accept_Ranges=True, Content_Range=True, Content_Range_Data=(_range, lendata), method=method)
                                 webfile.close()
-                                socksend(sock, 206, 'html', data, Accept_Ranges=True, Content_Range=True, Content_Range_Data=(_range, lendata), method=method)
 #---------------------------------------------------------
                             else:
 #---------------------------cgi---------------------------
@@ -172,7 +176,6 @@ def handler(sock):
                                 else:
                                     webfile = open(path.split('/', 1)[1], 'rb')                             
 #---------------------------in-ctype----------------------
-                                
                                     if ext in ctype:
                                         data = webfile.read()
                                         _type = (('HTTP/1.1 200 OK' + CRLF).encode())
@@ -181,7 +184,8 @@ def handler(sock):
                                         _type += ((f'Content-Length: {len(data)}' + CRLF).encode())
                                         _type += ((f'Content-Type: {ctype[ext]}; charset=UTF-8' + CRLF * 2).encode())
                                         webfile.seek(0)
-                                        socksend(sock, 200, ext, data, webfile, Accept_Ranges=True, method=method)
+                                        socksend(sock, 200, ext, data, fileobj=webfile, Accept_Ranges=True, method=method)
+                                        webfile.close()
 #---------------------------------------------------------
                         
                                     else:
@@ -278,6 +282,7 @@ if __name__ == '__main__':
     parser.add_argument('-cgi', '--CGI', action='store_true')
     args = parser.parse_args()
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     if not args.root_dir == None:
         os.chdir(args.root_dir)
 
@@ -291,7 +296,7 @@ if __name__ == '__main__':
     
     if not args.SSL == None:
         SSL = True
-    
+
     if SSL:
         s = ssl.wrap_socket (s, certfile=args.SSL[0], keyfile=args.SSL[1], server_side=True, ssl_version="TLSv1")
         port = 443
@@ -301,10 +306,9 @@ if __name__ == '__main__':
             port = int(args.port)
     try:
         s.bind(('', port))
-    except OSError:
-        print('Address already in use!')
+    except OSError as e:
+        print('Error:', e)
         sys.exit(0)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.listen(0)
 
     while True:
