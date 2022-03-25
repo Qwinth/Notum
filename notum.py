@@ -84,7 +84,7 @@ def handler(sock):
                 if len(unquote(path).split('?', 1)) == 2:
                     path, cgiargs = unquote(path.replace('+', ' ')).split('?', 1)
                     print(path, cgiargs)
-                
+
                 elif len(unquote(path).split('?', 1)) == 1:
                     path = unquote(path)
                     cgiargs = str()
