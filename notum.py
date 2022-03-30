@@ -67,8 +67,8 @@ def socksend(sock, code, ext, data=None, datalen=0, fileobj=None, Accept_Ranges 
 
 def handler(sock):
     try:
-        request = sock.recv(4096)
-        temp = request.decode().split('\r\n')
+        recv = sock.recv(4096)
+        temp = recv.decode().split('\r\n')
         client_headers = {}
         try:
             method, path, _ = temp[0].split(' ')
