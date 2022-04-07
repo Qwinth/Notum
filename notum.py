@@ -200,7 +200,7 @@ def handler(sock):
 #---------------------------------------------------------
                         
                                     else:
-#---------------------------otcet-stream------------------
+#---------------------------octet-stream------------------
                                         datalen = length(webfile)
                                         _type = (('HTTP/1.1 200 OK' + CRLF).encode())
                                         _type += (('Server: Notum' + CRLF).encode())
