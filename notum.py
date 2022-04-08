@@ -261,7 +261,7 @@ def handler(sock):
 #---------------------------------------------------------
 #---------------------------404---------------------------
                 else:
-                    socksend(sock, '404 Not Found', 'html', b'<h1>404 Page not found</h>', method=method)
+                    socksend(sock, 404, 'html', b'<h1>404 Page not found</h>', method=method)
 #---------------------------------------------------------
                 
     except ConnectionResetError:
