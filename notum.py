@@ -50,7 +50,7 @@ def socksend(sock, code, ext, data=None, datalen=0, fileobj=None, Accept_Ranges 
         sock.sendall(('Connection: close' + CRLF).encode())
         if Content_Range:
             _range, lendata = Content_Range_Data
-            sock.sendall((f'Content-Range: bytes {_range}-{lendata}/{lendata + 1}' + CRLF).encode())
+            sock.sendall((f'Content-Range: bytes {_range}-{lendata - 1}/{lendata}' + CRLF).encode())
         sock.sendall((f'Content-Length: {datalen}' + CRLF).encode())
         sock.sendall((f'Content-Type: {ctype[ext]}; charset=UTF-8' + CRLF * 2).encode())
         if method == 'GET' or method == 'POST':
